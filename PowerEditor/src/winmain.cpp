@@ -402,8 +402,8 @@ DEVOMER*/
 			fileNamesData.lpData = (void *)quotFileName.c_str();
 			fileNamesData.cbData = long(quotFileName.length() + 1)*(sizeof(TCHAR));
 
-			::SendMessage(hNotepad_plus, WM_COPYDATA, (WPARAM)hInstance, (LPARAM)&paramData);
-			::SendMessage(hNotepad_plus, WM_COPYDATA, (WPARAM)hInstance, (LPARAM)&fileNamesData);
+			::SendMessage(hNotepad_plus, WM_COPYDATA, reinterpret_cast<WPARAM>(hInstance), reinterpret_cast<LPARAM>(&paramData));
+			::SendMessage(hNotepad_plus, WM_COPYDATA, reinterpret_cast<WPARAM>(hInstance), reinterpret_cast<LPARAM>(&fileNamesData));
 		}
 		return 0;
         }
@@ -411,15 +411,15 @@ DEVOMER*/
 
 	Notepad_plus_Window notepad_plus_plus;
 
-	NppGUI & nppGui = (NppGUI &)pNppParameters->getNppGUI();
+	NppGUI & nppGui = const_cast<NppGUI &>(pNppParameters->getNppGUI());
 
 	generic_string updaterDir = pNppParameters->getNppPath();
 	updaterDir += TEXT("\\updater\\");
 
 	generic_string updaterFullPath = updaterDir + TEXT("gup.exe");
 
-	generic_string version = TEXT("-v");
-	version += VERSION_VALUE;
+	generic_string updaterParams = TEXT("-v");
+	updaterParams += VERSION_VALUE;
 
 	bool isUpExist = nppGui._doesExistUpdater = (::PathFileExists(updaterFullPath.c_str()) == TRUE);
 
@@ -438,7 +438,11 @@ DEVOMER*/
 	bool isGtXP = ver > WV_XP;
 	if (TheFirstOne && isUpExist && doUpdate && isGtXP)
 	{
-		Process updater(updaterFullPath.c_str(), version.c_str(), updaterDir.c_str());
+		if (pNppParameters->isx64())
+		{
+			updaterParams += TEXT(" -px64");
+		}
+		Process updater(updaterFullPath.c_str(), updaterParams.c_str(), updaterDir.c_str());
 		updater.run();
 
         // Update next update date
@@ -521,7 +525,7 @@ DEVOMER*/
 	{
 		TCHAR message[1024];	//TODO: sane number
 		wsprintf(message, TEXT("An exception occured. Notepad++ cannot recover and must be shut down.\r\nThe exception details are as follows:\r\n")
-		TEXT("Code:\t0x%08X\r\nType:\t%S\r\nException address: 0x%08X"), ex.code(), ex.what(), (long)ex.where());
+			TEXT("Code:\t0x%08X\r\nType:\t%S\r\nException address: 0x%08X"), ex.code(), ex.what(), reinterpret_cast<long>(ex.where()));
 		::MessageBox(Notepad_plus_Window::gNppHWND, message, TEXT("Win32Exception"), MB_OK | MB_ICONERROR);
 		mdump.writeDump(ex.info());
 		doException(notepad_plus_plus);
@@ -537,5 +541,5 @@ DEVOMER*/
 		doException(notepad_plus_plus);
 	}
 
-	return (UINT)msg.wParam;
+	return static_cast<int>(msg.wParam);
 }

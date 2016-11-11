@@ -250,7 +250,7 @@ public:
 	bool isFileSession(const TCHAR * filename);
 	bool isFileWorkspace(const TCHAR * filename);
 	void filePrint(bool showDialog);
-	bool saveScintillaParams();
+	void saveScintillasZoom();
 
 	bool saveGUIParams();
 	bool saveProjectPanelsParams();
@@ -364,6 +364,8 @@ private:
 
 	bool _sysMenuEntering = false;
 
+	// make sure we don't recursively call doClose when closing the last file with -quitOnEmpty
+	bool _isAttemptingCloseOnQuit = false;
 
 	// For FullScreen/PostIt features
 	VisibleGUIConf	_beforeSpecialView;
@@ -375,6 +377,9 @@ private:
 	bool _recordingMacro = false;
 	bool _playingBackMacro = false;
 	RunMacroDlg _runMacroDlg;
+
+	// For conflict detection when saving Macros or RunCommands
+	ShortcutMapper * _pShortcutMapper = nullptr;
 
 	// For hotspot
 	bool _linkTriggered = true;
@@ -461,6 +466,8 @@ private:
 
 	bool canHideView(int whichOne);	//true if view can safely be hidden (no open docs etc)
 
+	bool isEmpty(); // true if we have 1 view with 1 clean, untitled doc
+
 	int switchEditViewTo(int gid);	//activate other view (set focus etc)
 
 	void docGotoAnotherEditView(FileTransferMode mode);	//TransferMode
@@ -531,7 +538,7 @@ private:
 	{
 		if (lineno == -1)
 			lineno = static_cast<int32_t>(_pEditView->getCurrentLineNumber());
-		if ( bookmarkPresent(lineno))
+		while (bookmarkPresent(lineno))
 			_pEditView->execute(SCI_MARKERDELETE, lineno, MARK_BOOKMARK);
 	}
 

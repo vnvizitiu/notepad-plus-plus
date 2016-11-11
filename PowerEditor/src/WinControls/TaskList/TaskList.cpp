@@ -25,8 +25,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-
-
 #include <stdexcept>
 #include "TaskList.h"
 #include "TaskListDlg_rc.h"
@@ -62,7 +60,7 @@ void TaskList::init(HINSTANCE hInst, HWND parent, HIMAGELIST hImaLst, int nbItem
                                 0,
                                 0,
                                 _hParent, 
-                                (HMENU) NULL, 
+                                NULL, 
                                 hInst,
                                 NULL);
 	if (!_hSelf)
@@ -70,8 +68,8 @@ void TaskList::init(HINSTANCE hInst, HWND parent, HIMAGELIST hImaLst, int nbItem
 		throw std::runtime_error("TaskList::init : CreateWindowEx() function return null");
 	}
 
-	::SetWindowLongPtr(_hSelf, GWLP_USERDATA, (LONG_PTR)this);
-	_defaultProc = reinterpret_cast<WNDPROC>(::SetWindowLongPtr(_hSelf, GWLP_WNDPROC, (LONG_PTR)staticProc));
+	::SetWindowLongPtr(_hSelf, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+	_defaultProc = reinterpret_cast<WNDPROC>(::SetWindowLongPtr(_hSelf, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(staticProc)));
 
 	DWORD exStyle = ListView_GetExtendedListViewStyle(_hSelf);
 	exStyle |= LVS_EX_FULLROWSELECT | LVS_EX_BORDERSELECT ;
@@ -107,33 +105,32 @@ RECT TaskList::adjustSize()
 	RECT rc;
 	ListView_GetItemRect(_hSelf, 0, &rc, LVIR_ICON);
 	const int imgWidth = rc.right - rc.left;
-	const int leftMarge = 30;
-	const int xpBottomMarge = 5;
-	const int w7BottomMarge = 15;
+	const int aSpaceWidth = ListView_GetStringWidth(_hSelf, TEXT(" "));
+	const int leftMarge = ::GetSystemMetrics(SM_CXFRAME) * 2 + aSpaceWidth * 4;
 
 	// Temporary set "selected" font to get the worst case widths
 	::SendMessage(_hSelf, WM_SETFONT, reinterpret_cast<WPARAM>(_hFontSelected), 0);
 	int maxwidth = -1;
 
-	_rc.left = 0;
-	_rc.top = 0;
-	_rc.bottom = 0;
+	_rc = { 0, 0, 0, 0 };
+	TCHAR buf[MAX_PATH];
 	for (int i = 0 ; i < _nbItem ; ++i)
 	{
-		TCHAR buf[MAX_PATH];
 		ListView_GetItemText(_hSelf, i, 0, buf, MAX_PATH);
 		int width = ListView_GetStringWidth(_hSelf, buf);
 		if (width > maxwidth)
 			maxwidth = width;
 		_rc.bottom += rc.bottom - rc.top;
 	}
+
 	_rc.right = maxwidth + imgWidth + leftMarge;
 	ListView_SetColumnWidth(_hSelf, 0, _rc.right);
 	::SendMessage(_hSelf, WM_SETFONT, reinterpret_cast<WPARAM>(_hFont), 0);
 
 	reSizeTo(_rc);
-	winVer ver = (NppParameters::getInstance())->getWinVersion();
-	_rc.bottom += (ver <= WV_XP && ver != WV_UNKNOWN)?xpBottomMarge:w7BottomMarge;
+
+	// Task List's border is 1px smaller than ::GetSystemMetrics(SM_CYFRAME) returns
+	_rc.bottom += (::GetSystemMetrics(SM_CYFRAME) - 1) * 2;
 	return _rc;
 }
 

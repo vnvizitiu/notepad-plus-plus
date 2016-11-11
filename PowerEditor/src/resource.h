@@ -27,12 +27,12 @@
 #pragma once
 
 
-#define NOTEPAD_PLUS_VERSION TEXT("Notepad++ v6.9.2")
+#define NOTEPAD_PLUS_VERSION TEXT("Notepad++ v7.2")
 
 // should be X.Y : ie. if VERSION_DIGITALVALUE == 4, 7, 1, 0 , then X = 4, Y = 71
 // ex : #define VERSION_VALUE TEXT("5.63\0")
-#define VERSION_VALUE TEXT("6.92\0")
-#define VERSION_DIGITALVALUE 6, 9, 2, 0
+#define VERSION_VALUE TEXT("7.2\0")
+#define VERSION_DIGITALVALUE 7, 2, 0, 0
 
 
 
@@ -407,6 +407,8 @@
 	#define NPPM_INTERNAL_FINDINFINDERDLG           (NOTEPADPLUS_USER_INTERNAL + 40)
 	#define NPPM_INTERNAL_REMOVEFINDER               (NOTEPADPLUS_USER_INTERNAL + 41)
 	#define NPPM_INTERNAL_RELOADSCROLLTOEND			(NOTEPADPLUS_USER_INTERNAL + 42)  // Used by Monitoring feature
+	#define NPPM_INTERNAL_FINDKEYCONFLICTS          (NOTEPADPLUS_USER_INTERNAL + 43)
+	#define NPPM_INTERNAL_SCROLLBEYONDLASTLINE      (NOTEPADPLUS_USER_INTERNAL + 44)
 
     //wParam: 0
     //lParam: document new index

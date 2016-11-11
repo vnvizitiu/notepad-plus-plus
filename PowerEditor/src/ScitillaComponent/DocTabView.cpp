@@ -51,8 +51,8 @@ void DocTabView::addBuffer(BufferID buffer)
 	if (_hasImgLst)
 		index = 0;
 	tie.iImage = index;
-	tie.pszText = (TCHAR *)buf->getFileName();
-	tie.lParam = (LPARAM)buffer;
+	tie.pszText = const_cast<TCHAR *>(buf->getFileName());
+	tie.lParam = reinterpret_cast<LPARAM>(buffer);
 	::SendMessage(_hSelf, TCM_INSERTITEM, _nbItem++, reinterpret_cast<LPARAM>(&tie));
 	bufferUpdated(buf, BufferChangeMask);
 
@@ -110,11 +110,11 @@ int DocTabView::getIndexByBuffer(BufferID id)
 	TCITEM tie;
 	tie.lParam = -1;
 	tie.mask = TCIF_PARAM;
-	for(int i = 0; i < (int)_nbItem; ++i)
+	for(size_t i = 0; i < _nbItem; ++i)
 	{
 		::SendMessage(_hSelf, TCM_GETITEM, i, reinterpret_cast<LPARAM>(&tie));
 		if (reinterpret_cast<BufferID>(tie.lParam) == id)
-			return i;
+			return static_cast<int>(i);
 	}
 	return -1;
 }
@@ -161,7 +161,7 @@ void DocTabView::bufferUpdated(Buffer * buffer, int mask)
 	if (mask & BufferChangeFilename)
 	{
 		tie.mask |= TCIF_TEXT;
-		tie.pszText = (TCHAR *)encodedLabel;
+		tie.pszText = const_cast<TCHAR *>(encodedLabel);
 
 		{
 			const TCHAR* in = buffer->getFileName();
@@ -194,13 +194,13 @@ void DocTabView::bufferUpdated(Buffer * buffer, int mask)
 }
 
 
-void DocTabView::setBuffer(int index, BufferID id)
+void DocTabView::setBuffer(size_t index, BufferID id)
 {
-	if (index < 0 || index >= (int)_nbItem)
+	if (index < 0 || index >= _nbItem)
 		return;
 
 	TCITEM tie;
-	tie.lParam = (LPARAM)id;
+	tie.lParam = reinterpret_cast<LPARAM>(id);
 	tie.mask = TCIF_PARAM;
 	::SendMessage(_hSelf, TCM_SETITEM, index, reinterpret_cast<LPARAM>(&tie));
 

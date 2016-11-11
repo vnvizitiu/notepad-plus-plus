@@ -79,6 +79,8 @@ int whichVar(TCHAR *str)
 		return CURRENT_WORD;
 	else if (!lstrcmp(nppDir, str))
 		return NPP_DIRECTORY;
+	else if (!lstrcmp(nppFullFilePath, str))
+		return NPP_FULL_FILE_PATH;
 	else if (!lstrcmp(currentLine, str))
 		return CURRENT_LINE;
 	else if (!lstrcmp(currentColumn, str))
@@ -135,7 +137,7 @@ void expandNppEnvironmentStrs(const TCHAR *strSrc, TCHAR *stringDest, size_t str
 						wsprintf(expandedStr, TEXT("%d"), lineNumber);
 					}
 					else
-						::SendMessage(hWnd, RUNCOMMAND_USER + internalVar, CURRENTWORD_MAXLENGTH, (LPARAM)expandedStr);
+						::SendMessage(hWnd, RUNCOMMAND_USER + internalVar, CURRENTWORD_MAXLENGTH, reinterpret_cast<LPARAM>(expandedStr));
 
 					for (size_t p = 0, len3 = size_t(lstrlen(expandedStr)); p < len3; ++p)
 					{
@@ -196,10 +198,15 @@ HINSTANCE Command::run(HWND hWnd)
 	return res;
 }
 
-INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM)
+INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{
+		case NPPM_INTERNAL_FINDKEYCONFLICTS:
+		{
+			return ::SendMessage(_hParent, message, wParam, lParam);
+		}
+
 		case WM_COMMAND : 
 		{
 			switch (wParam)
@@ -241,11 +248,12 @@ INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM)
 
 					if (uc.doDialog() != -1)
 					{
-						HMENU hRunMenu = ::GetSubMenu((HMENU)::SendMessage(_hParent, NPPM_INTERNAL_GETMENU, 0, 0), MENUINDEX_RUN);
+						HMENU mainMenu = reinterpret_cast<HMENU>(::SendMessage(_hParent, NPPM_INTERNAL_GETMENU, 0, 0));
+						HMENU hRunMenu = ::GetSubMenu(mainMenu, MENUINDEX_RUN);
 						int const posBase = 2;
 						
 						if (nbCmd == 0)
-							::InsertMenu(hRunMenu, posBase - 1, MF_BYPOSITION, (unsigned int)-1, 0);
+							::InsertMenu(hRunMenu, posBase - 1, MF_BYPOSITION, static_cast<unsigned int>(-1), 0);
 						
 						theUserCmds.push_back(uc);
 						::InsertMenu(hRunMenu, posBase + nbCmd, MF_BYPOSITION, cmdID, uc.toMenuItemString().c_str());
@@ -254,7 +262,7 @@ INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM)
                         if (nbCmd == 0)
                         {
                             // Insert the separator and modify/delete command
-			                ::InsertMenu(hRunMenu, posBase + nbCmd + 1, MF_BYPOSITION, (unsigned int)-1, 0);
+							::InsertMenu(hRunMenu, posBase + nbCmd + 1, MF_BYPOSITION, static_cast<unsigned int>(-1), 0);
 							NativeLangSpeaker *pNativeLangSpeaker = nppParams->getNativeLangSpeaker();
 							generic_string nativeLangShortcutMapperMacro = pNativeLangSpeaker->getNativeLangMenuString(IDM_SETTING_SHORTCUT_MAPPER_MACRO);
 							if (nativeLangShortcutMapperMacro == TEXT(""))
@@ -301,15 +309,15 @@ INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM)
 void RunDlg::addTextToCombo(const TCHAR *txt2Add) const
 {
 	HWND handle = ::GetDlgItem(_hSelf, IDC_COMBO_RUN_PATH);
-	auto i = ::SendMessage(handle, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)txt2Add);
+	auto i = ::SendMessage(handle, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(txt2Add));
 	if (i == CB_ERR)
-		i = ::SendMessage(handle, CB_ADDSTRING, 0, (LPARAM)txt2Add);
+		i = ::SendMessage(handle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(txt2Add));
 	::SendMessage(handle, CB_SETCURSEL, i, 0);
 }
 void RunDlg::removeTextFromCombo(const TCHAR *txt2Remove) const
 {
 	HWND handle = ::GetDlgItem(_hSelf, IDC_COMBO_RUN_PATH);
-	auto i = ::SendMessage(handle, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)txt2Remove);
+	auto i = ::SendMessage(handle, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(txt2Remove));
 	if (i == CB_ERR)
 		return;
 	::SendMessage(handle, CB_DELETESTRING, i, 0);

@@ -408,11 +408,11 @@ Lang * Buffer::getCurrentLang() const
 
 int Buffer::indexOfReference(const ScintillaEditView * identifier) const
 {
-	int size = (int)_referees.size();
-	for (int i = 0; i < size; ++i)
+	size_t size = _referees.size();
+	for (size_t i = 0; i < size; ++i)
 	{
 		if (_referees[i] == identifier)
-			return i;
+			return static_cast<int>(i);
 	}
 	return -1;	//not found
 }
@@ -537,7 +537,7 @@ int FileManager::getBufferIndexByID(BufferID id)
 	for(size_t i = 0; i < _nrBufs; ++i)
 	{
 		if (_buffers[i]->_id == id)
-			return (int) i;
+			return static_cast<int>(i);
 	}
 	return -1;
 }
@@ -805,22 +805,30 @@ bool FileManager::backupCurrentBuffer()
 			// Synchronization
 			// This method is called from 2 differents place, so synchronization is important
 			HANDLE writeEvent = ::OpenEvent(EVENT_ALL_ACCESS, TRUE, TEXT("nppWrittingEvent"));
-			if (!writeEvent)
+			if (not writeEvent)
 			{
 				// no thread yet, create a event with non-signaled, to block all threads
 				writeEvent = ::CreateEvent(NULL, TRUE, FALSE, TEXT("nppWrittingEvent"));
+				if (not writeEvent)
+				{
+					printStr(TEXT("CreateEvent problem in backupCurrentBuffer()!"));
+					return false;
+				}
 			}
 			else
 			{
 				if (::WaitForSingleObject(writeEvent, INFINITE) != WAIT_OBJECT_0)
 				{
-					// problem!!!
 					printStr(TEXT("WaitForSingleObject problem in backupCurrentBuffer()!"));
 					return false;
 				}
 
 				// unlocled here, set to non-signaled state, to block all threads
-				::ResetEvent(writeEvent);
+				if (not ::ResetEvent(writeEvent))
+				{
+					printStr(TEXT("ResetEvent problem in backupCurrentBuffer()!"));
+					return false;
+				}
 			}
 
 			UniMode mode = buffer->getUnicodeMode();
@@ -959,7 +967,7 @@ bool FileManager::backupCurrentBuffer()
 class EventReset final
 {
 public:
-	EventReset(HANDLE h)
+	explicit EventReset(HANDLE h)
 	{
 		_h = h;
 	}
@@ -1400,7 +1408,7 @@ bool FileManager::loadFileData(Document doc, const TCHAR * filename, char* data,
 		TCHAR * name = NppParameters::getInstance()->getELCFromIndex(id)._name;
 		WcharMbcsConvertor *wmc = WcharMbcsConvertor::getInstance();
 		const char *pName = wmc->wchar2char(name, CP_ACP);
-		_pscratchTilla->execute(SCI_SETLEXERLANGUAGE, 0, (LPARAM)pName);
+		_pscratchTilla->execute(SCI_SETLEXERLANGUAGE, 0, reinterpret_cast<LPARAM>(pName));
 	}
 
 	if (encoding != -1)
@@ -1454,14 +1462,14 @@ bool FileManager::loadFileData(Document doc, const TCHAR * filename, char* data,
 				if (encoding == SC_CP_UTF8)
 				{
 					// Pass through UTF-8 (this does not check validity of characters, thus inserting a multi-byte character in two halfs is working)
-					_pscratchTilla->execute(SCI_APPENDTEXT, lenFile, (LPARAM)data);
+					_pscratchTilla->execute(SCI_APPENDTEXT, lenFile, reinterpret_cast<LPARAM>(data));
 				}
 				else
 				{
 					WcharMbcsConvertor* wmc = WcharMbcsConvertor::getInstance();
 					int newDataLen = 0;
 					const char *newData = wmc->encode(encoding, SC_CP_UTF8, data, static_cast<int32_t>(lenFile), &newDataLen, &incompleteMultibyteChar);
-					_pscratchTilla->execute(SCI_APPENDTEXT, newDataLen, (LPARAM)newData);
+					_pscratchTilla->execute(SCI_APPENDTEXT, newDataLen, reinterpret_cast<LPARAM>(newData));
 				}
 
 				if (format == EolType::unknown)
@@ -1470,7 +1478,7 @@ bool FileManager::loadFileData(Document doc, const TCHAR * filename, char* data,
 			else
 			{
 				lenConvert = unicodeConvertor->convert(data, lenFile);
-				_pscratchTilla->execute(SCI_APPENDTEXT, lenConvert, (LPARAM)(unicodeConvertor->getNewBuf()));
+				_pscratchTilla->execute(SCI_APPENDTEXT, lenConvert, reinterpret_cast<LPARAM>(unicodeConvertor->getNewBuf()));
 				if (format == EolType::unknown)
 					format = getEOLFormatForm(unicodeConvertor->getNewBuf(), unicodeConvertor->getNewSize(), EolType::unknown);
 			}

@@ -28,6 +28,7 @@
 
 #include <time.h>
 #include <shlwapi.h>
+#include <ShlObj.h>
 #include "Notepad_plus_Window.h"
 #include "FileDialog.h"
 #include "EncodingMapper.h"
@@ -87,11 +88,18 @@ DWORD WINAPI Notepad_plus::monitorFileOnChange(void * params)
 				else
 				{
 					changes.Pop(dwAction, wstrFilename);
-					if (lstrcmp(fullFileName, wstrFilename.GetString()) == 0)
+					generic_string fn = wstrFilename.GetString();
+
+					// Fix monitoring files which are under root problem
+					size_t pos = fn.find(TEXT("\\\\"));
+					if (pos == 2)
+						fn.replace(pos, 2, TEXT("\\"));
+
+					if (lstrcmp(fullFileName, fn.c_str()) == 0)
 					{
 						if (dwAction == FILE_ACTION_MODIFIED)
 						{
-							::PostMessage(h, NPPM_INTERNAL_RELOADSCROLLTOEND, (WPARAM)buf, 0);
+							::PostMessage(h, NPPM_INTERNAL_RELOADSCROLLTOEND, reinterpret_cast<WPARAM>(buf), 0);
 						}
 						else if ((dwAction == FILE_ACTION_REMOVED) || (dwAction == FILE_ACTION_RENAMED_OLD_NAME))
 						{
@@ -209,7 +217,6 @@ BufferID Notepad_plus::doOpen(const generic_string& fileName, bool isRecursive, 
     }
 
     bool globbing = wcsrchr(longFileName, TCHAR('*')) || wcsrchr(longFileName, TCHAR('?'));
-	bool isOpenningNewEmptyFile = false;
 
 	if (!isSnapshotMode) // if not backup mode, or backupfile path is invalid
 	{
@@ -229,7 +236,6 @@ BufferID Notepad_plus::doOpen(const generic_string& fileName, bool isRecursive, 
 					if (res)
 					{
 						isCreateFileSuccessful = true;
-						isOpenningNewEmptyFile = true;
 					}
 					else
 					{
@@ -299,16 +305,6 @@ BufferID Notepad_plus::doOpen(const generic_string& fileName, bool isRecursive, 
         // if file is read only, we set the view read only
         if (isReadOnly)
             buf->setUserReadOnly(true);
-
-		// if it's a new created file, then use new file default settings
-		if (isOpenningNewEmptyFile)
-		{
-			const NewDocDefaultSettings & ndds = (NppParameters::getInstance()->getNppGUI()).getNewDocDefaultSettings();
-			buf->setEncoding(ndds._codepage);
-			buf->setEolFormat(ndds._format);
-			buf->setUnicodeMode(ndds._unicodeMode);
-			buf->setLangType(ndds._lang);
-		}
 
         // Notify plugins that current file is about to open
         scnN.nmhdr.code = NPPN_FILEBEFOREOPEN;
@@ -599,6 +595,10 @@ void Notepad_plus::doClose(BufferID id, int whichOne, bool doDeleteBackup)
 	if (i == -1)
 		return;
 
+	size_t numInitialOpenBuffers =
+		((_mainWindowStatus & WindowMainActive) == WindowMainActive ? _mainDocTab.nbItem() : 0) +
+		((_mainWindowStatus & WindowSubActive) == WindowSubActive ? _subDocTab.nbItem() : 0);
+
 	if (doDeleteBackup)
 		MainFileManager->deleteCurrentBufferBackup();
 
@@ -666,8 +666,6 @@ void Notepad_plus::doClose(BufferID id, int whichOne, bool doDeleteBackup)
 		// if the same buffer ID is not found then remove the entry from File Switcher Panel
 		if (_pFileSwitcherPanel)
 		{
-			//int posInfo = ::SendMessage(_pPublicInterface->getHSelf(), NPPM_GETPOSFROMBUFFERID, (WPARAM)id ,0);
-
 			_pFileSwitcherPanel->closeItem(id, whichOne);
 
 			if (hiddenBufferID != BUFFER_INVALID)
@@ -675,6 +673,16 @@ void Notepad_plus::doClose(BufferID id, int whichOne, bool doDeleteBackup)
 		}
 	}
 	command(IDM_VIEW_REFRESHTABAR);
+
+	if (NppParameters::getInstance()->getNppGUI()._tabStatus & TAB_QUITONEMPTY)
+	{
+		// the user closed the last open tab
+		if (numInitialOpenBuffers == 1 && isEmpty() && !_isAttemptingCloseOnQuit)
+		{
+			command(IDM_FILE_EXIT);
+		}
+	}
+
 	return;
 }
 
@@ -1150,65 +1158,61 @@ bool Notepad_plus::fileSave(BufferID id)
 
 	if (!buf->getFileReadOnly() && buf->isDirty())	//cannot save if readonly
 	{
-		const TCHAR *fn = buf->getFullPathName();
 		if (buf->isUntitled())
 		{
 			return fileSaveAs(bufferID);
 		}
-		else
-		{
-			const NppGUI & nppgui = (NppParameters::getInstance())->getNppGUI();
-			BackupFeature backup = nppgui._backup;
-			TCHAR *name = ::PathFindFileName(fn);
 
+		const NppGUI & nppgui = (NppParameters::getInstance())->getNppGUI();
+		BackupFeature backup = nppgui._backup;
+
+		if (backup != bak_none)
+		{
+			const TCHAR *fn = buf->getFullPathName();
+			TCHAR *name = ::PathFindFileName(fn);
+			generic_string fn_bak;
+
+			if (nppgui._useDir && not nppgui._backupDir.empty())
+			{
+				// Get the custom directory, make sure it has a trailing slash
+				fn_bak = nppgui._backupDir;
+				if (fn_bak.back() != TEXT('\\'))
+					fn_bak += TEXT("\\");
+			}
+			else
+			{
+				// Get the current file's directory
+				generic_string path = fn;
+				::PathRemoveFileSpec(path);
+				fn_bak = path.c_str();
+				fn_bak += TEXT("\\");
+
+				// If verbose, save it in a sub folder
+				if (backup == bak_verbose)
+				{
+					fn_bak += TEXT("nppBackup\\");
+				}
+			}
+
+			// Expand any environment variables
+			TCHAR fn_bak_expanded[MAX_PATH] = { '\0' };
+			::ExpandEnvironmentStrings(fn_bak.c_str(), fn_bak_expanded, MAX_PATH);
+			fn_bak = fn_bak_expanded;
+
+			// Make sure the directory exists
+			if (!::PathFileExists(fn_bak.c_str()))
+			{
+				SHCreateDirectory(NULL, fn_bak.c_str());
+			}
+
+			// Determine what to name the backed-up file
 			if (backup == bak_simple)
 			{
-				//copy fn to fn.backup
-				generic_string fn_bak(fn);
-				if ((nppgui._useDir) && (nppgui._backupDir != TEXT("")))
-				{
-					fn_bak = nppgui._backupDir;
-					fn_bak += TEXT("\\");
-					fn_bak += name;
-				}
-				else
-				{
-					fn_bak = fn;
-				}
+				fn_bak += name;
 				fn_bak += TEXT(".bak");
-				::CopyFile(fn, fn_bak.c_str(), FALSE);
 			}
 			else if (backup == bak_verbose)
 			{
-				generic_string fn_dateTime_bak(TEXT(""));
-
-				if ((nppgui._useDir) && (nppgui._backupDir != TEXT("")))
-				{
-					fn_dateTime_bak = nppgui._backupDir;
-					fn_dateTime_bak += TEXT("\\");
-				}
-				else
-				{
-					const TCHAR *bakDir = TEXT("nppBackup");
-
-					// std::string path should be a temp throwable variable
-					generic_string path = fn;
-					::PathRemoveFileSpec(path);
-					fn_dateTime_bak = path.c_str();
-
-
-					fn_dateTime_bak += TEXT("\\");
-					fn_dateTime_bak += bakDir;
-					fn_dateTime_bak += TEXT("\\");
-
-					if (!::PathFileExists(fn_dateTime_bak.c_str()))
-					{
-						::CreateDirectory(fn_dateTime_bak.c_str(), NULL);
-					}
-				}
-
-				fn_dateTime_bak += name;
-
 				const int temBufLen = 32;
 				TCHAR tmpbuf[temBufLen];
 				time_t ltime = time(0);
@@ -1217,14 +1221,26 @@ bool Notepad_plus::fileSave(BufferID id)
 				today = localtime(&ltime);
 				generic_strftime(tmpbuf, temBufLen, TEXT("%Y-%m-%d_%H%M%S"), today);
 
-				fn_dateTime_bak += TEXT(".");
-				fn_dateTime_bak += tmpbuf;
-				fn_dateTime_bak += TEXT(".bak");
-
-				::CopyFile(fn, fn_dateTime_bak.c_str(), FALSE);
+				fn_bak += name;
+				fn_bak += TEXT(".");
+				fn_bak += tmpbuf;
+				fn_bak += TEXT(".bak");
 			}
-			return doSave(bufferID, buf->getFullPathName(), false);
+
+			if (not ::CopyFile(fn, fn_bak.c_str(), FALSE))
+			{
+				generic_string msg = TEXT("The previous version of the file could not be saved into the backup directory at ");
+				msg += TEXT("\"");
+				msg += fn_bak;
+				msg += TEXT("\".\r\rDo you want to save the current file anyways?");
+				if (::MessageBox(_pPublicInterface->getHSelf(), msg.c_str(), TEXT("File Backup Failed"), MB_YESNO | MB_ICONERROR) == IDNO)
+				{
+					return false;
+				}
+			}
 		}
+
+		return doSave(bufferID, buf->getFullPathName(), false);
 	}
 	return false;
 }
@@ -1290,13 +1306,13 @@ bool Notepad_plus::fileSaveAs(BufferID id, bool isSaveCopy)
 
 	// Disable file autodetection before opening save dialog to prevent use-after-delete bug.
 	NppParameters *pNppParam = NppParameters::getInstance();
-	ChangeDetect cdBefore = ((NppGUI &)(pNppParam->getNppGUI()))._fileAutoDetection;
-	((NppGUI &)(pNppParam->getNppGUI()))._fileAutoDetection = cdDisabled;
+	ChangeDetect cdBefore = (const_cast<NppGUI &>(pNppParam->getNppGUI()))._fileAutoDetection;
+	(const_cast<NppGUI &>(pNppParam->getNppGUI()))._fileAutoDetection = cdDisabled;
 
 	TCHAR *pfn = fDlg.doSaveDlg();
 
 	// Enable file autodetection again.
-	((NppGUI &)(pNppParam->getNppGUI()))._fileAutoDetection = cdBefore;
+	(const_cast<NppGUI &>(pNppParam->getNppGUI()))._fileAutoDetection = cdBefore;
 
 	if (pfn)
 	{

@@ -68,20 +68,11 @@ INT_PTR CALLBACK GoToLineDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM)
 						}
                     }
 
-					// find hotspots
-					/*
-					NMHDR nmhdr;
-					nmhdr.code = SCN_PAINTED;
-					nmhdr.hwndFrom = _hSelf;
-					nmhdr.idFrom = ::GetDlgCtrlID(nmhdr.hwndFrom);
-					::SendMessage(_hParent, WM_NOTIFY, (WPARAM)LINKTRIGGERED, (LPARAM)&nmhdr);
-					*/
-
 					SCNotification notification = {};
 					notification.nmhdr.code = SCN_PAINTED;
 					notification.nmhdr.hwndFrom = _hSelf;
 					notification.nmhdr.idFrom = ::GetDlgCtrlID(_hSelf);
-					::SendMessage(_hParent, WM_NOTIFY, (WPARAM)LINKTRIGGERED, (LPARAM)&notification);
+					::SendMessage(_hParent, WM_NOTIFY, LINKTRIGGERED, reinterpret_cast<LPARAM>(&notification));
 
                     (*_ppEditView)->getFocus();
                     return TRUE;
@@ -137,13 +128,13 @@ void GoToLineDlg::updateLinesNumbers() const
 	
 	if (_mode == go2line)
 	{
-		current = (unsigned int)((*_ppEditView)->getCurrentLineNumber() + 1);
-		limit = (unsigned int)((*_ppEditView)->execute(SCI_GETLINECOUNT));
+		current = static_cast<unsigned int>((*_ppEditView)->getCurrentLineNumber() + 1);
+		limit = static_cast<unsigned int>((*_ppEditView)->execute(SCI_GETLINECOUNT));
 	}
 	else
 	{
-		current = (unsigned int)(*_ppEditView)->execute(SCI_GETCURRENTPOS);
-		limit = (unsigned int)((*_ppEditView)->getCurrentDocLen() - 1);
+		current = static_cast<unsigned int>((*_ppEditView)->execute(SCI_GETCURRENTPOS));
+		limit = static_cast<unsigned int>((*_ppEditView)->getCurrentDocLen() - 1);
 	}
     ::SetDlgItemInt(_hSelf, ID_CURRLINE, current, FALSE);
     ::SetDlgItemInt(_hSelf, ID_LASTLINE, limit, FALSE);

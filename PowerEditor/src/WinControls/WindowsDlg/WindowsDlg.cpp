@@ -162,8 +162,8 @@ struct BufferEquivalent
 		}
 		else if (_iColumn == 2)
 		{
-			int t1 = (int)b1->getLangType();
-			int t2 = (int)b2->getLangType();
+			auto t1 = b1->getLangType();
+			auto t2 = b2->getLangType();
 			return (t1 < t2); // yeah should be the name
 		}
 		return false;
@@ -199,7 +199,7 @@ END_WINDOW_MAP()
 
 RECT WindowsDlg::_lastKnownLocation;
 
-WindowsDlg::WindowsDlg() : MyBaseClass(WindowsDlgMap), _isSorted(false)
+WindowsDlg::WindowsDlg() : MyBaseClass(WindowsDlgMap)
 {
 	_szMinButton = SIZEZERO;
 	_szMinListCtrl = SIZEZERO;
@@ -429,7 +429,7 @@ void WindowsDlg::updateButtonState()
 int WindowsDlg::doDialog(TiXmlNodeA *dlgNode)
 {
 	_dlgNode = dlgNode;
-	return (int)::DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_WINDOWS), _hParent,  dlgProc, (LPARAM)this);
+	return static_cast<int>(DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_WINDOWS), _hParent, dlgProc, reinterpret_cast<LPARAM>(this)));
 };
 
 bool WindowsDlg::changeDlgLang()
@@ -586,7 +586,7 @@ void WindowsDlg::doRefresh(bool invalidate /*= false*/)
 					_idxMap[i] = int(i);
 			}
 			LPARAM lp = invalidate ? LVSICF_NOSCROLL|LVSICF_NOINVALIDATEALL : LVSICF_NOSCROLL;
-			::SendMessage(_hList, LVM_SETITEMCOUNT, (WPARAM)count, lp);
+			::SendMessage(_hList, LVM_SETITEMCOUNT, count, lp);
 			::InvalidateRect(_hList, &_rc, FALSE);
 
 			resetSelection();
@@ -602,8 +602,8 @@ void WindowsDlg::fitColumnsToSize()
 	if (GetClientRect(_hList, &rc))
 	{
 		int len = (rc.right - rc.left);
-		len -= (int)SendMessage(_hList, LVM_GETCOLUMNWIDTH, 0, 0);
-		len -= (int)SendMessage(_hList, LVM_GETCOLUMNWIDTH, 2, 0);
+		len -= static_cast<int>(SendMessage(_hList, LVM_GETCOLUMNWIDTH, 0, 0));
+		len -= static_cast<int>(SendMessage(_hList, LVM_GETCOLUMNWIDTH, 2, 0));
 		len -= GetSystemMetrics(SM_CXVSCROLL);
 		len -= 1;
 		SendMessage(_hList, LVM_SETCOLUMNWIDTH, 1, len);
@@ -719,7 +719,9 @@ void WindowsDlg::doClose()
 	else
 	{
 		// select first previously selected item (or last one if only the last one was removed)
-		if (index == (int)_idxMap.size()) index --;
+		if (index == static_cast<int>(_idxMap.size()))
+			index -= 1;
+
 		if (index >= 0)
 		{
 			ListView_SetItemState(_hList, index, LVIS_SELECTED, LVIS_SELECTED);

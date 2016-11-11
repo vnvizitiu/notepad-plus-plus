@@ -26,41 +26,17 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#ifndef SCINTILLA_EDIT_VIEW_H
-#define SCINTILLA_EDIT_VIEW_H
+#pragma once
 
-#ifndef SCINTILLA_H
+
 #include "Scintilla.h"
-#endif //SCINTILLA_H
-
-#ifndef SCINTILLA_REF_H
 #include "ScintillaRef.h"
-#endif //SCINTILLA_REF_H
-
-#ifndef SCILEXER_H
 #include "SciLexer.h"
-#endif //SCILEXER_H
-
-#ifndef BUFFER_H
 #include "Buffer.h"
-#endif //BUFFER_H
-
-#ifndef COLORS_H
 #include "colors.h"
-#endif //COLORS_H
-
-#ifndef USER_DEFINE_H
 #include "UserDefineDialog.h"
-#endif //USER_DEFINE_H
+#include "rgba_icons.h"
 
-#ifndef XPM_ICON_H
-#include "xpm_icons.h"
-#endif //XPM_ICON_H
-/*
-#ifndef RESOURCE_H
-#include "resource.h"
-#endif //RESOURCE_H
-*/
 
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL 0x020A
@@ -123,9 +99,17 @@ const int CP_GREEK = 1253;
 const bool fold_uncollapse = true;
 const bool fold_collapse = false;
 
-const bool UPPERCASE = true;
-const bool LOWERCASE = false;
-
+enum TextCase : UCHAR
+{
+	UPPERCASE,
+	LOWERCASE,
+	TITLECASE_FORCE,
+	TITLECASE_BLEND,
+	SENTENCECASE_FORCE,
+	SENTENCECASE_BLEND,
+	INVERTCASE,
+	RANDOMCASE
+};
 
 const UCHAR MASK_FORMAT = 0x03;
 const UCHAR MASK_ZERO_LEADING = 0x04;
@@ -138,8 +122,9 @@ const UCHAR BASE_02 = 0x03; // Bin
 const int MARK_BOOKMARK = 24;
 const int MARK_HIDELINESBEGIN = 23;
 const int MARK_HIDELINESEND = 22;
-//const int MARK_LINEMODIFIEDUNSAVED = 21;
-//const int MARK_LINEMODIFIEDSAVED = 20;
+const int MARK_HIDELINESUNDERLINE = 21;
+//const int MARK_LINEMODIFIEDUNSAVED = 20;
+//const int MARK_LINEMODIFIEDSAVED = 19;
 // 24 - 16 reserved for Notepad++ internal used
 // 15 - 0  are free to use for plugins
 
@@ -204,10 +189,7 @@ class ScintillaEditView : public Window
 {
 friend class Finder;
 public:
-	ScintillaEditView()
-		: Window(), _pScintillaFunc(NULL),_pScintillaPtr(NULL),
-		  _lineNumbersShown(false), _wrapRestoreNeeded(false), _beginSelectPosition(-1)
-	{
+	ScintillaEditView(): Window() {
 		++_refCount;
 	};
 
@@ -338,9 +320,11 @@ public:
         else
 		{
 			int width = 3;
-			if (whichMarge == _SC_MARGE_SYBOLE || whichMarge == _SC_MARGE_FOLDER)
-				width = 14;
-            execute(SCI_SETMARGINWIDTHN, whichMarge, willBeShowed?width:0);
+			if (whichMarge == _SC_MARGE_SYBOLE)
+				width = NppParameters::getInstance()->_dpiManager.scaleX(100) >= 150 ? 20 : 16;
+			else if (whichMarge == _SC_MARGE_FOLDER)
+				width = NppParameters::getInstance()->_dpiManager.scaleX(100) >= 150 ? 18 : 14;
+			execute(SCI_SETMARGINWIDTHN, whichMarge, willBeShowed ? width : 0);
 		}
     };
 
@@ -396,7 +380,7 @@ public:
 	};
 
 	void showIndentGuideLine(bool willBeShowed = true) {
-		execute(SCI_SETINDENTATIONGUIDES, (WPARAM)willBeShowed?(SC_IV_LOOKBOTH):(SC_IV_NONE));
+		execute(SCI_SETINDENTATIONGUIDES, willBeShowed ? SC_IV_LOOKBOTH : SC_IV_NONE);
 	};
 
 	bool isShownIndentGuide() const {
@@ -404,7 +388,7 @@ public:
 	};
 
     void wrap(bool willBeWrapped = true) {
-        execute(SCI_SETWRAPMODE, (WPARAM)willBeWrapped);
+        execute(SCI_SETWRAPMODE, willBeWrapped);
     };
 
     bool isWrap() const {
@@ -486,7 +470,7 @@ public:
 			return -1;
 		auto size_selected = execute(SCI_GETSELTEXT);
 		char *selected = new char[size_selected + 1];
-		execute(SCI_GETSELTEXT, (WPARAM)0, (LPARAM)selected);
+		execute(SCI_GETSELTEXT, 0, reinterpret_cast<LPARAM>(selected));
 		char *c = selected;
 		long length = 0;
 		while(*c != '\0')
@@ -545,7 +529,8 @@ public:
     void currentLinesUp() const;
     void currentLinesDown() const;
 
-	void convertSelectedTextTo(bool Case);
+	void changeCase(__inout wchar_t * const strWToConvert, const int & nbChars, const TextCase & caseToConvert) const;
+	void convertSelectedTextTo(const TextCase & caseToConvert);
 	void setMultiSelections(const ColumnModeInfos & cmi);
 
     void convertSelectedTextToLowerCase() {
@@ -562,6 +547,14 @@ public:
 			convertSelectedTextTo(UPPERCASE);
 		else
 			execute(SCI_UPPERCASE);
+	};
+
+	void convertSelectedTextToNewerCase(const TextCase & caseToConvert) {
+		// if system is w2k or xp
+		if ((NppParameters::getInstance())->isTransparentAvailable())
+			convertSelectedTextTo(caseToConvert);
+		else
+			::MessageBox(_hSelf, TEXT("This function needs a newer OS version."), TEXT("Change Case Error"), MB_OK | MB_ICONHAND);
 	};
 
 	void collapse(int level2Collapse, bool mode);
@@ -590,7 +583,7 @@ public:
 		execute(SCI_INDICATORCLEARRANGE, docStart, docEnd-docStart);
 	};
 
-	static LanguageName ScintillaEditView::langNames[L_EXTERNAL+1];
+	static LanguageName langNames[L_EXTERNAL+1];
 
 	void bufferUpdated(Buffer * buffer, int mask);
 	BufferID getCurrentBufferID() { return _currentBufferID; };
@@ -656,26 +649,26 @@ protected:
 	static LRESULT CALLBACK scintillaStatic_Proc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	LRESULT scintillaNew_Proc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 
-	SCINTILLA_FUNC _pScintillaFunc;
-	SCINTILLA_PTR  _pScintillaPtr;
+	SCINTILLA_FUNC _pScintillaFunc = nullptr;
+	SCINTILLA_PTR  _pScintillaPtr = nullptr;
 	static WNDPROC _scintillaDefaultProc;
-	CallWindowProcFunc _callWindowProc;
+	CallWindowProcFunc _callWindowProc = nullptr;
 	BufferID attachDefaultDoc();
 
 	//Store the current buffer so it can be retrieved later
-	BufferID _currentBufferID;
-	Buffer * _currentBuffer;
+	BufferID _currentBufferID = nullptr;
+	Buffer * _currentBuffer = nullptr;
 
-    NppParameters *_pParameter;
-	int _codepage;
-	bool _lineNumbersShown;
-	bool _wrapRestoreNeeded;
+    NppParameters *_pParameter = nullptr;
+	int _codepage = CP_ACP;
+	bool _lineNumbersShown = false;
+	bool _wrapRestoreNeeded = false;
 
 	typedef std::unordered_map<int, Style> StyleMap;
 	typedef std::unordered_map<BufferID, StyleMap*> BufferStyleMap;
 	BufferStyleMap _hotspotStyles;
 
-	int _beginSelectPosition;
+	int _beginSelectPosition = -1;
 
 //Lexers and Styling
 	void restyleBuffer();
@@ -726,8 +719,8 @@ protected:
 
 	void setSqlLexer() {
 		const bool kbBackSlash = NppParameters::getInstance()->getNppGUI()._backSlashIsEscapeCharacterForSql;
-		execute(SCI_SETPROPERTY, (WPARAM)"sql.backslash.escapes", kbBackSlash ? (LPARAM)"1" : (LPARAM)"0");
 		setLexer(SCLEX_SQL, L_SQL, LIST_0);
+		execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("sql.backslash.escapes"), reinterpret_cast<LPARAM>(kbBackSlash ? "1" : "0"));
 	};
 
 	void setBashLexer() {
@@ -925,4 +918,3 @@ protected:
 	bool expandWordSelection();
 };
 
-#endif //SCINTILLA_EDIT_VIEW_H

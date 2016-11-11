@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <NotepadPlus>
-    <Native-Langue name="简体中文" filename="chineseSimplified.xml" version="6.8.2">
+    <Native-Langue name="简体中文" filename="chineseSimplified.xml" version="6.9.2">
         <Menu>
             <Main>
                 <!-- Main Menu Entries -->
@@ -19,6 +19,9 @@
                 </Entries>
                 <!-- Sub Menu Entries -->
                 <SubEntries>
+				    <!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+                    <Item subMenuId="edit-onSelection" name="选择"/>
+                    <!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
                     <Item subMenuId="file-openFolder" name="打开所在文件夹"/>
                     <Item subMenuId="file-closeMore" name="更多关闭方式"/>
                     <Item subMenuId="file-recentFiles" name="近期文件"/>
@@ -87,6 +90,7 @@
                     <Item id="41016" name="从磁盘删除" />
                     <Item id="41017" name="重命名..." />
                     <Item id="41021" name="恢复最近关闭的文件" />
+                    <Item id="41022" name="在工作区打开文件夹(&amp;W)"/>
 
                     <Item id="42001" name="剪切(&amp;T)" />
                     <Item id="42002" name="复制(&amp;C)" />
@@ -220,6 +224,7 @@
                     <Item id="44049" name="摘要..." />
                     <Item id="44080" name="文档结构图" />
                     <Item id="44084" name="函数列表" />
+                    <Item id="44085" name="文件夹工作区(&amp;W)"/>
                     <Item id="44086" name="标签页1"/>
                     <Item id="44087" name="标签页2"/>
                     <Item id="44088" name="标签页3"/>
@@ -278,8 +283,8 @@
                     <Item id="48018" name="编辑弹出菜单" />
                     <Item id="48009" name="管理快捷键..." />
                     <Item id="48011" name="首选项..." />
-                    <Item id="49000" name="运行(&amp;R)..." />
-
+                    <Item id="49000" name="运行(&amp;R)..." />					
+				
                     <Item id="50000" name="函数自动完成" />
                     <Item id="50001" name="单词自动完成" />
                     <Item id="50002" name="函数参数提示" />
@@ -289,6 +294,27 @@
                     <Item id="42041" name="清除文件列表" />
                     <Item id="48016" name="管理快捷键..." />
                     <Item id="48017" name="管理快捷键..." />
+					<!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+	                <Item id="42073" name="打开文件"/>
+	                <Item id="42074" name="在资源管理器中打开包含文件夹"/>
+	                <Item id="42075" name="上网搜索"/>
+	                <Item id="42076" name="更改搜索引擎..."/>
+
+                    <Item id="44097" name="监视日志 (tail -f)"/>
+                    <Item id="44098" name="前移标签"/>
+                    <Item id="44099" name="后移标签"/>
+
+                    <Item id="47012" name="调试信息..."/>
+					
+					<Item id="42067" name="首字母大写"/>
+                    <Item id="42068" name="首字母大写(混合)"/>
+                    <Item id="42069" name="句子首字母大写"/>
+                    <Item id="42070" name="句子首字母大写(混合)"/>
+                    <Item id="42071" name="大小写互换"/>
+                    <Item id="42072" name="随机大小写"/>
+                    <!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+					
+					
                 </Commands>
             </Main>
             <Splitter>
@@ -316,7 +342,8 @@
                 <Item CMID="19" name="打开所在文件夹"/>
                 <Item CMID="20" name="打开所在文件夹(命令行)"/>
             </TabBar>
-        </Menu>
+
+			</Menu>
 
         <Dialog>
             <Find title="" titleFind="查找" titleReplace="替换" titleFindInFiles="文件查找" titleMark="标记">
@@ -667,6 +694,11 @@
                     <Item id="6215" name="启用平滑字体" />
 
                     <Item id="6231" name="边框宽度" />
+					<!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+                    <Item id="6236" name="启用滚动超过最后一行"/>
+					<Item id="6235" name="无边框"/>
+                    <!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+					
                 </Scintillas>
 
                 <NewDoc title="新建">
@@ -677,9 +709,11 @@
                     <Item id="6405" name="编码" />
                     <Item id="6406" name="ANSI" />
                     <Item id="6407" name="UTF-8 (无BOM)" />
-                    <Item id="6408" name="UTF-8" />
-                    <Item id="6409" name="UCS-2 Big endian" />
-                    <Item id="6410" name="UCS-2 Small endian" />
+                    <!-- change  2016-10-07 21:15:18  version 7.0.0.0 -->
+                    <Item id="6408" name="UTF-8 含 BOM"/>
+                    <Item id="6409" name="UCS-2 Big Endian 含 BOM"/>
+                    <Item id="6410" name="UCS-2 Little Endian 含 BOM"/>
+                    <!-- change  2016-10-07 21:15:18  version 7.0.0.0 -->
                     <Item id="6411" name="默认语言 :" />
                     <Item id="6419" name="新建文档" />
                     <Item id="6420" name="应用于打开 ANSI 文件" />
@@ -689,6 +723,10 @@
                     <Item id="6413" name="文件打开/保存路径" />
                     <Item id="6414" name="与当前文件一致" />
                     <Item id="6415" name="记住最后的操作路径" />
+					<!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+                    <Item id="6430" name="使用新样式保存对话框(没有文件扩展名的功能)"/>
+                    <Item id="6431" name="拖放文件夹打开文件夹中所有文件，而不启动文件夹工作区"/>
+                    <!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
                 </DefaultDir>
 
                 <FileAssoc title="文件关联">
@@ -751,6 +789,19 @@
                     <Item id="6427" name="自定义最大长度:" />
                 </RecentFilesHistory>
 
+				<!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+                <SearchEngine title="搜索引擎">
+                    <Item id="6271" name="搜索引擎(搜索互联网的命令)"/>
+                    <Item id="6272" name="DuckDuckGo"/>
+                    <Item id="6273" name="Google"/>
+                    <Item id="6274" name="Bing"/>
+                    <Item id="6275" name="雅虎!"/>
+                    <Item id="6276" name="设定你的搜索引擎:"/>
+                    <!-- Don't change anything after Example: -->
+                    <Item id="6278" name="例: https://www.google.com/search?q=$(CURRENT_WORD)"/>
+                </SearchEngine>
+                <!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+				
                 <MISC title="其他">
                     <Item id="6307" name="启用" />
                     <Item id="6308" name="最小化到系统托盘" />
@@ -777,6 +828,9 @@
                     <Item id="6114" name="启用" />
                     <Item id="6115" name="自动缩进" />
                     <Item id="6117" name="启用 MRU (Most Recently Used) 功能" />
+					<!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
+                    <Item id="6337" name="工作区文件扩展名:"/>
+                    <!-- new 2016-10-07 21:15:18  version 7.0.0.0 -->
                 </MISC>
                 <Backup title="备份">
                     <Item id="6801" name="备份" />

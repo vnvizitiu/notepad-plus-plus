@@ -332,7 +332,8 @@ void getNameStrFromCmd(DWORD cmd, generic_string & str)
 		HWND hNotepad_plus = ::FindWindow(Notepad_plus_Window::getClassName(), NULL);
 		const int commandSize = 64;
 		TCHAR cmdName[commandSize];
-		int nbChar = ::GetMenuString((HMENU)::SendMessage(hNotepad_plus, NPPM_INTERNAL_GETMENU, 0, 0), cmd, cmdName, commandSize, MF_BYCOMMAND);
+		HMENU m = reinterpret_cast<HMENU>(::SendMessage(hNotepad_plus, NPPM_INTERNAL_GETMENU, 0, 0));
+		int nbChar = ::GetMenuString(m, cmd, cmdName, commandSize, MF_BYCOMMAND);
 		if (!nbChar)
 			return;
 		bool fin = false;
@@ -362,6 +363,22 @@ void getNameStrFromCmd(DWORD cmd, generic_string & str)
 	return;
 }
 
+void Shortcut::updateConflictState(const bool endSession) const
+{
+	if (endSession)
+	{
+		// Clean up message for detached dialogs: save Macros/RunCommands
+		::SendMessage(_hParent, NPPM_INTERNAL_FINDKEYCONFLICTS, 0, 0);
+		return;
+	}
+
+	// Check for conflicts
+	bool isConflict = false;
+	::SendMessage(_hParent, NPPM_INTERNAL_FINDKEYCONFLICTS,
+				  reinterpret_cast<WPARAM>(&_keyCombo), reinterpret_cast<LPARAM>(&isConflict));
+	::ShowWindow(::GetDlgItem(_hSelf, IDC_CONFLICT_STATIC), isConflict ? SW_SHOW : SW_HIDE);
+}
+
 INT_PTR CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM) 
 {
 	switch (Message)
@@ -371,7 +388,7 @@ INT_PTR CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM)
 			::SetDlgItemText(_hSelf, IDC_NAME_EDIT, getMenuName());	//display the menu name, with ampersands
 			if (!_canModifyName)
 				::SendDlgItemMessage(_hSelf, IDC_NAME_EDIT, EM_SETREADONLY, TRUE, 0);
-			int textlen = (int)::SendDlgItemMessage(_hSelf, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0);
+			auto textlen = ::SendDlgItemMessage(_hSelf, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0);
 
 			::SendDlgItemMessage(_hSelf, IDC_CTRL_CHECK, BM_SETCHECK, _keyCombo._isCtrl?BST_CHECKED:BST_UNCHECKED, 0);
 			::SendDlgItemMessage(_hSelf, IDC_ALT_CHECK, BM_SETCHECK, _keyCombo._isAlt?BST_CHECKED:BST_UNCHECKED, 0);
@@ -380,7 +397,7 @@ INT_PTR CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM)
 			int iFound = -1;
 			for (size_t i = 0 ; i < nrKeys ; ++i)
 			{
-				::SendDlgItemMessage(_hSelf, IDC_KEY_COMBO, CB_ADDSTRING, 0, (LPARAM)namedKeyArray[i].name);
+				::SendDlgItemMessage(_hSelf, IDC_KEY_COMBO, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(namedKeyArray[i].name));
 
 				if (_keyCombo._key == namedKeyArray[i].id)
 					iFound = static_cast<int32_t>(i);
@@ -389,28 +406,31 @@ INT_PTR CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM)
 			if (iFound != -1)
 				::SendDlgItemMessage(_hSelf, IDC_KEY_COMBO, CB_SETCURSEL, iFound, 0);
 			::ShowWindow(::GetDlgItem(_hSelf, IDC_WARNING_STATIC), isEnabled()?SW_HIDE:SW_SHOW);
-
+			updateConflictState();
 			goToCenter();
 			return TRUE;
 		}
 
 		case WM_COMMAND : 
 		{
-			int textlen = (int)::SendDlgItemMessage(_hSelf, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0);
+			auto textlen = ::SendDlgItemMessage(_hSelf, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0);
 			switch (wParam)
 			{
 				case IDC_CTRL_CHECK :
 					_keyCombo._isCtrl = BST_CHECKED == ::SendDlgItemMessage(_hSelf, static_cast<int32_t>(wParam), BM_GETCHECK, 0, 0);
 					::EnableWindow(::GetDlgItem(_hSelf, IDOK), isValid() && (textlen > 0 || !_canModifyName));
+					updateConflictState();
 					return TRUE;
 
 				case IDC_ALT_CHECK :
 					_keyCombo._isAlt = BST_CHECKED == ::SendDlgItemMessage(_hSelf, static_cast<int32_t>(wParam), BM_GETCHECK, 0, 0);
 					::EnableWindow(::GetDlgItem(_hSelf, IDOK), isValid() && (textlen > 0 || !_canModifyName));
+					updateConflictState();
 					return TRUE;
 
 				case IDC_SHIFT_CHECK :
 					_keyCombo._isShift = BST_CHECKED == ::SendDlgItemMessage(_hSelf, static_cast<int32_t>(wParam), BM_GETCHECK, 0, 0);
+					updateConflictState();
 					return TRUE;
 
 				case IDOK :
@@ -419,14 +439,16 @@ INT_PTR CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM)
 					}
 					if (_canModifyName) {
 						TCHAR editName[nameLenMax];
-						::SendDlgItemMessage(_hSelf, IDC_NAME_EDIT, WM_GETTEXT, nameLenMax, (LPARAM)editName);
+						::SendDlgItemMessage(_hSelf, IDC_NAME_EDIT, WM_GETTEXT, nameLenMax, reinterpret_cast<LPARAM>(editName));
 						setName(editName);
 					}
 					::EndDialog(_hSelf, 0);
+					updateConflictState(true);
 					return TRUE;
 
 				case IDCANCEL :
 					::EndDialog(_hSelf, -1);
+					updateConflictState(true);
 					return TRUE;
 
 				default:
@@ -446,6 +468,7 @@ INT_PTR CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM)
 							_keyCombo._key = namedKeyArray[i].id;
 							::EnableWindow(::GetDlgItem(_hSelf, IDOK), isValid() && (textlen > 0 || !_canModifyName));
 							::ShowWindow(::GetDlgItem(_hSelf, IDC_WARNING_STATIC), isEnabled()?SW_HIDE:SW_SHOW);
+							updateConflictState();
 							return TRUE;
 						}
 					}
@@ -585,15 +608,15 @@ void Accelerator::updateFullMenu() {
 
 void Accelerator::updateMenuItemByCommand(CommandShortcut csc)
 {
-	int cmdID = (int)csc.getID();
+	int cmdID = csc.getID();
 	
 	//  Ensure that the menu item checks set prior to this update remain in affect.
 	UINT cmdFlags = GetMenuState(_hAccelMenu, cmdID, MF_BYCOMMAND );
-	cmdFlags = MF_BYCOMMAND | (cmdFlags&MF_CHECKED) ? ( MF_CHECKED ) : ( MF_UNCHECKED );
+	cmdFlags = MF_BYCOMMAND | ((cmdFlags&MF_CHECKED) ? MF_CHECKED : MF_UNCHECKED);
 	::ModifyMenu(_hAccelMenu, cmdID, cmdFlags, cmdID, csc.toMenuItemString().c_str());
 }
 
-recordedMacroStep::recordedMacroStep(int iMessage, long wParam, long lParam, int codepage)
+recordedMacroStep::recordedMacroStep(int iMessage, uptr_t wParam, uptr_t lParam, int codepage)
 	: _message(iMessage), _wParameter(wParam), _lParameter(lParam), _macroType(mtUseLParameter)
 { 
 	if (_lParameter) {
@@ -674,14 +697,15 @@ void recordedMacroStep::PlayBack(Window* pNotepad, ScintillaEditView *pEditView)
 	}
 }
 
-void ScintillaAccelerator::init(vector<HWND> * vScintillas, HMENU hMenu, HWND menuParent) {
+void ScintillaAccelerator::init(vector<HWND> * vScintillas, HMENU hMenu, HWND menuParent)
+{
 	_hAccelMenu = hMenu;
 	_hMenuParent = menuParent;
-	size_t nr = vScintillas->size();
-	for(size_t i = 0; i < nr; ++i) {
+	size_t nbScintilla = vScintillas->size();
+	for (size_t i = 0; i < nbScintilla; ++i)
+	{
 		_vScintillas.push_back(vScintillas->at(i));
 	}
-	_nrScintillas = (int)nr;
 }
 
 void ScintillaAccelerator::updateKeys() 
@@ -690,8 +714,8 @@ void ScintillaAccelerator::updateKeys()
 	vector<ScintillaKeyMap> & map = pNppParam->getScintillaKeyList();
 	size_t mapSize = map.size();
 	size_t index;
-
-	for(int i = 0; i < _nrScintillas; ++i)
+	size_t nb = nbScintillas();
+	for (size_t i = 0; i < nb; ++i)
 	{
 		::SendMessage(_vScintillas[i], SCI_CLEARALLCMDKEYS, 0, 0);
 		for(int32_t j = static_cast<int32_t>(mapSize) - 1; j >= 0; j--) //reverse order, top of the list has highest priority
@@ -740,11 +764,12 @@ void ScintillaAccelerator::updateMenuItemByID(ScintillaKeyMap skm, int id)
 }
 
 //This procedure uses _keyCombo as a temp. variable to store current settings which can then later be applied (by pressing OK)
-void ScintillaKeyMap::applyToCurrentIndex() {
-	int index = (int)::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_GETCURSEL, 0, 0);
-	if(index == LB_ERR)
+void ScintillaKeyMap::applyToCurrentIndex()
+{
+	int index = static_cast<int>(::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_GETCURSEL, 0, 0));
+	if (index == LB_ERR)
 		return;
-	setKeyComboByIndex(index, _keyCombo);
+	setKeyComboByIndex(static_cast<int>(index), _keyCombo);
 	updateListItem(index);
 	::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_SETCURSEL, index, 0);
 
@@ -754,11 +779,23 @@ void ScintillaKeyMap::validateDialog() {
 	bool valid = isValid();	//current combo valid?
 	bool isDisabling = _keyCombo._key == 0;	//true if this keycombo were to disable the shortcut
 	bool isDisabled = !isEnabled();	//true if this shortcut already is 
+	bool isDuplicate = false; //true if already in the list
 
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_BUTTON_ADD), valid && !isDisabling);
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_BUTTON_APPLY), valid && (!isDisabling || _size == 1));
+	for (size_t i = 0; i < _size; ++i) 
+	{
+		if (_keyCombo._key   == _keyCombos[i]._key   && _keyCombo._isCtrl  == _keyCombos[i]._isCtrl &&
+			_keyCombo._isAlt == _keyCombos[i]._isAlt && _keyCombo._isShift == _keyCombos[i]._isShift)
+		{
+			isDuplicate = true;
+			break;
+		}
+	}
+
+	::EnableWindow(::GetDlgItem(_hSelf, IDC_BUTTON_ADD), valid && !isDisabling && !isDuplicate);
+	::EnableWindow(::GetDlgItem(_hSelf, IDC_BUTTON_APPLY), valid && (!isDisabling || _size == 1) && !isDuplicate);
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_BUTTON_RMVE), (_size > 1)?TRUE:FALSE);
 	::ShowWindow(::GetDlgItem(_hSelf, IDC_WARNING_STATIC), isDisabled?SW_SHOW:SW_HIDE);
+	updateConflictState();
 }
 
 void ScintillaKeyMap::showCurrentSettings() {
@@ -778,7 +815,7 @@ void ScintillaKeyMap::showCurrentSettings() {
 }
 
 void ScintillaKeyMap::updateListItem(int index) {
-	::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_INSERTSTRING, index, (LPARAM)toString(index).c_str());
+	::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_INSERTSTRING, index, reinterpret_cast<LPARAM>(toString(index).c_str()));
 	::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_DELETESTRING, index+1, 0);
 }
 
@@ -794,12 +831,12 @@ INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARA
 
 			for (size_t i = 0 ; i < nrKeys ; ++i)
 			{
-				::SendDlgItemMessage(_hSelf, IDC_KEY_COMBO, CB_ADDSTRING, 0, (LPARAM)namedKeyArray[i].name);
+				::SendDlgItemMessage(_hSelf, IDC_KEY_COMBO, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(namedKeyArray[i].name));
 			}
 
 			for(size_t i = 0; i < _size; ++i)
 			{
-				::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_ADDSTRING, 0, (LPARAM)toString(i).c_str());
+				::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(toString(i).c_str()));
 			}
 			::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_SETCURSEL, 0, 0);
 
@@ -829,6 +866,7 @@ INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARA
 				case IDC_SHIFT_CHECK :
 					_keyCombo._isShift = BST_CHECKED == ::SendDlgItemMessage(_hSelf, static_cast<int32_t>(wParam), BM_GETCHECK, 0, 0);
 					//applyToCurrentIndex();
+					validateDialog();
 					return TRUE;
 
 				case IDOK :
@@ -850,7 +888,7 @@ INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARA
 					{
 						if (res == static_cast<int32_t>(oldsize))
 						{
-							::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_INSERTSTRING, (WPARAM)-1, (LPARAM)toString(res).c_str());
+							::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_INSERTSTRING, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(toString(res).c_str()));
 						}
 						else
 						{	//update current generic_string, can happen if it was disabled
@@ -863,28 +901,33 @@ INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARA
 					return TRUE; 
 				}
 
-				case IDC_BUTTON_RMVE: {
+				case IDC_BUTTON_RMVE:
+				{
 					if (_size == 1)	//cannot delete last shortcut
 						return TRUE;
 					auto i = ::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_GETCURSEL, 0, 0);
 					removeKeyComboByIndex(i);
 					::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_DELETESTRING, i, 0);
-					if (i == (int)_size)
+					if (static_cast<size_t>(i) == _size)
 						i = _size - 1;
 					::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_SETCURSEL, i, 0);
 					showCurrentSettings();
 					validateDialog();
-					return TRUE; }
+					return TRUE; 
+				}
 
-				case IDC_BUTTON_APPLY: {
+				case IDC_BUTTON_APPLY:
+				{
 					applyToCurrentIndex();
 					validateDialog();
-					return TRUE; }
+					return TRUE;
+				}
 
 				default:
 					if (HIWORD(wParam) == CBN_SELCHANGE || HIWORD(wParam) == LBN_SELCHANGE)
 					{
-						switch(LOWORD(wParam)) {
+						switch(LOWORD(wParam))
+						{
 							case IDC_KEY_COMBO:
 							{
 								auto i = ::SendDlgItemMessage(_hSelf, IDC_KEY_COMBO, CB_GETCURSEL, 0, 0);
@@ -896,6 +939,7 @@ INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARA
 							case IDC_LIST_KEYS:
 							{
 								showCurrentSettings();
+								validateDialog();
 								return TRUE;
 							}
 						}
