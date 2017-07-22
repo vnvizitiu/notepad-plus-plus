@@ -29,10 +29,10 @@
 ; Define the application name
 !define APPNAME "Notepad++"
 
-!define APPVERSION "7.2"
+!define APPVERSION "7.4.2"
 !define APPNAMEANDVERSION "${APPNAME} v${APPVERSION}"
 !define VERSION_MAJOR 7
-!define VERSION_MINOR 2
+!define VERSION_MINOR 42
 
 !define APPWEBSITE "http://notepad-plus-plus.org/"
 
@@ -43,10 +43,6 @@
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
 
-!ifdef ARCH64
-InstallDir "$PROGRAMFILES64\${APPNAME}"
-!else
 InstallDir "$PROGRAMFILES\${APPNAME}"
-!endif
 
 InstallDirRegKey HKLM "Software\${APPNAME}" ""

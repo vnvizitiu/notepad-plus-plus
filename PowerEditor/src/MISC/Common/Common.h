@@ -165,11 +165,7 @@ private:
 #define MACRO_RECORDING_IN_PROGRESS 1
 #define MACRO_RECORDING_HAS_STOPPED 2
 
-#if _MSC_VER > 1400 // MS Compiler > VS 2005
-#define REBARBAND_SIZE REBARBANDINFO_V3_SIZE
-#else
 #define REBARBAND_SIZE sizeof(REBARBANDINFO)
-#endif
 
 generic_string PathRemoveFileSpec(generic_string & path);
 generic_string PathAppend(generic_string &strDest, const generic_string & str2append);
@@ -182,3 +178,12 @@ generic_string stringTakeWhileAdmissable(const generic_string& input, const gene
 double stodLocale(const generic_string& str, _locale_t loc, size_t* idx = NULL);
 
 bool str2Clipboard(const generic_string &str2cpy, HWND hwnd);
+
+generic_string GetLastErrorAsString(DWORD errorCode = 0);
+
+generic_string intToString(int val);
+generic_string uintToString(unsigned int val);
+
+HWND CreateToolTip(int toolID, HWND hDlg, HINSTANCE hInst, const PTSTR pszText);
+
+bool isCertificateValidated(const generic_string & fullFilePath, const generic_string & subjectName2check);

@@ -33,9 +33,53 @@
 typedef std::vector<const TCHAR*> ParamVector;
 
 
+namespace
+{
+
+
+void allowWmCopydataMessages(Notepad_plus_Window& notepad_plus_plus, const NppParameters* pNppParameters, winVer ver)
+{
+	#ifndef MSGFLT_ADD
+	const DWORD MSGFLT_ADD = 1;
+	#endif
+	#ifndef MSGFLT_ALLOW
+	const DWORD MSGFLT_ALLOW = 1;
+	#endif
+	// Tell UAC that lower integrity processes are allowed to send WM_COPYDATA messages to this process (or window)
+	// This allows opening new files to already opened elevated Notepad++ process via explorer context menu.
+	if (ver >= WV_VISTA || ver == WV_UNKNOWN)
+	{
+		HMODULE hDll = GetModuleHandle(TEXT("user32.dll"));
+		if (hDll)
+		{
+			// According to MSDN ChangeWindowMessageFilter may not be supported in future versions of Windows,
+			// that is why we use ChangeWindowMessageFilterEx if it is available (windows version >= Win7).
+			if (pNppParameters->getWinVersion() == WV_VISTA)
+			{
+				typedef BOOL (WINAPI *MESSAGEFILTERFUNC)(UINT message,DWORD dwFlag);
+
+				MESSAGEFILTERFUNC func = (MESSAGEFILTERFUNC)::GetProcAddress( hDll, "ChangeWindowMessageFilter" );
+
+				if (func)
+					func(WM_COPYDATA, MSGFLT_ADD);
+			}
+			else
+			{
+				typedef BOOL (WINAPI *MESSAGEFILTERFUNCEX)(HWND hWnd,UINT message,DWORD action,VOID* pChangeFilterStruct);
+
+				MESSAGEFILTERFUNCEX func = (MESSAGEFILTERFUNCEX)::GetProcAddress( hDll, "ChangeWindowMessageFilterEx" );
+
+				if (func)
+					func(notepad_plus_plus.getHSelf(), WM_COPYDATA, MSGFLT_ALLOW, NULL );
+			}
+		}
+	}
+}
+
+
 bool checkSingleFile(const TCHAR *commandLine)
 {
-	if (!commandLine || lstrlen(commandLine) == 0)
+	if (!commandLine || commandLine[0] == TEXT('\0'))
 		return false;
 
 	TCHAR fullpath[MAX_PATH] = {0};
@@ -54,11 +98,18 @@ bool checkSingleFile(const TCHAR *commandLine)
 }
 
 //commandLine should contain path to n++ executable running
-void parseCommandLine(TCHAR * commandLine, ParamVector & paramVector) {
-	//params.erase(params.begin());
+void parseCommandLine(const TCHAR* cmdLine, ParamVector& paramVector)
+{
+	if (!cmdLine)
+		return;
+
+	TCHAR* commandLine = new TCHAR[lstrlen(cmdLine)];
+	lstrcpy(commandLine, cmdLine);
+
 	//remove the first element, since thats the path the the executable (GetCommandLine does that)
 	TCHAR stopChar = TEXT(' ');
-	if (commandLine[0] == TEXT('\"')) {
+	if (commandLine[0] == TEXT('\"'))
+	{
 		stopChar = TEXT('\"');
 		++commandLine;
 	}
@@ -90,31 +141,43 @@ void parseCommandLine(TCHAR * commandLine, ParamVector & paramVector) {
 	size_t commandLength = lstrlen(commandLine);
 	for (size_t i = 0; i < commandLength; ++i)
 	{
-		switch(commandLine[i]) {
-			case '\"': {										//quoted filename, ignore any following whitespace
-				if (!isInFile) {	//" will always be treated as start or end of param, in case the user forgot to add an space
+		switch(commandLine[i])
+		{
+			case '\"': //quoted filename, ignore any following whitespace
+			{
+				if (!isInFile)	//" will always be treated as start or end of param, in case the user forgot to add an space
+				{
 					paramVector.push_back(commandLine+i+1);	//add next param(since zero terminated generic_string original, no overflow of +1)
 				}
 				isInFile = !isInFile;
 				isInWhiteSpace = false;
 				//because we dont want to leave in any quotes in the filename, remove them now (with zero terminator)
 				commandLine[i] = 0;
-				break; }
-			case '\t':	//also treat tab as whitespace
-			case ' ': {
+			}
+			break;
+
+			case '\t': //also treat tab as whitespace
+			case ' ': 
+			{
 				isInWhiteSpace = true;
 				if (!isInFile)
-					commandLine[i] = 0;		//zap spaces into zero terminators, unless its part of a filename
-				break; }
-			default: {											//default TCHAR, if beginning of word, add it
-				if (!isInFile && isInWhiteSpace) {
+					commandLine[i] = 0;		//zap spaces into zero terminators, unless its part of a filename	
+			}
+			break;
+
+			default: //default TCHAR, if beginning of word, add it
+			{
+				if (!isInFile && isInWhiteSpace)
+				{
 					paramVector.push_back(commandLine+i);	//add next param
 					isInWhiteSpace = false;
 				}
-				break; }
+			}
 		}
 	}
 	//the commandline generic_string is now a list of zero terminated strings concatenated, and the vector contains all the substrings
+
+	delete commandLine;
 }
 
 bool isInList(const TCHAR *token2Find, ParamVector & params)
@@ -242,7 +305,7 @@ const TCHAR FLAG_OPENSESSIONFILE[] = TEXT("-openSession");
 const TCHAR FLAG_RECURSIVE[] = TEXT("-r");
 
 
-static void doException(Notepad_plus_Window & notepad_plus_plus)
+void doException(Notepad_plus_Window & notepad_plus_plus)
 {
 	Win32Exception::removeHandler();	//disable exception handler after excpetion, we dont want corrupt data structurs to crash the exception handler
 	::MessageBox(Notepad_plus_Window::gNppHWND, TEXT("Notepad++ will attempt to save any unsaved data. However, dataloss is very likely."), TEXT("Recovery initiating"), MB_OK | MB_ICONINFORMATION);
@@ -264,6 +327,7 @@ static void doException(Notepad_plus_Window & notepad_plus_plus)
 }
 
 
+} // namespace
 
 
 
@@ -377,17 +441,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 		else if (::IsIconic(hNotepad_plus))
 			sw = SW_RESTORE;
 
-/* REMOVED
-		else
-			sw = SW_SHOW;
-
-		// IMPORTANT !!!
-		::ShowWindow(hNotepad_plus, sw);
-DEVOMER*/
-/* ADDED */
 		if (sw != 0)
 			::ShowWindow(hNotepad_plus, sw);
-/* DEDDA */
+
 		::SetForegroundWindow(hNotepad_plus);
 
 		if (params.size() > 0)	//if there are files to open, use the WM_COPYDATA system
@@ -457,39 +513,7 @@ DEVOMER*/
 	try
 	{
 		notepad_plus_plus.init(hInstance, NULL, quotFileName.c_str(), &cmdLineParams);
-
-		// Tell UAC that lower integrity processes are allowed to send WM_COPYDATA messages to this process (or window)
-		// This allows opening new files to already opened elevated Notepad++ process via explorer context menu.
-		if (ver >= WV_VISTA || ver == WV_UNKNOWN)
-		{
-			HMODULE hDll = GetModuleHandle(TEXT("user32.dll"));
-			if (hDll)
-			{
-				// According to MSDN ChangeWindowMessageFilter may not be supported in future versions of Windows,
-				// that is why we use ChangeWindowMessageFilterEx if it is available (windows version >= Win7).
-				if (pNppParameters->getWinVersion() == WV_VISTA)
-				{
-					typedef BOOL (WINAPI *MESSAGEFILTERFUNC)(UINT message,DWORD dwFlag);
-					const DWORD MSGFLT_ADD = 1;
-
-					MESSAGEFILTERFUNC func = (MESSAGEFILTERFUNC)::GetProcAddress( hDll, "ChangeWindowMessageFilter" );
-
-					if (func)
-						func(WM_COPYDATA, MSGFLT_ADD);
-				}
-				else
-				{
-					typedef BOOL (WINAPI *MESSAGEFILTERFUNCEX)(HWND hWnd,UINT message,DWORD action,VOID* pChangeFilterStruct);
-					const DWORD MSGFLT_ALLOW = 1;
-
-					MESSAGEFILTERFUNCEX func = (MESSAGEFILTERFUNCEX)::GetProcAddress( hDll, "ChangeWindowMessageFilterEx" );
-
-					if (func)
-						func(notepad_plus_plus.getHSelf(), WM_COPYDATA, MSGFLT_ALLOW, NULL );
-				}
-			}
-		}
-
+		allowWmCopydataMessages(notepad_plus_plus, pNppParameters, ver);
 		bool going = true;
 		while (going)
 		{

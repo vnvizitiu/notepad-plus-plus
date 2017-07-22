@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 
 <!--
-	German localization for Notepad++ 7.0
-	last modified: 2016-09-25 by schnurlos (schnurlos@gmail.com)
+	German localization for Notepad++ 7.4.2
+	last modified: 2017-07-02 by schnurlos (schnurlos@gmail.com)
 
 	Please e-mail errors, suggestions etc. to schnurlos(at)gmail.com or janschreiber(at)users.sf.net
 
@@ -12,7 +12,7 @@
 -->
 
 <NotepadPlus>
-	<Native-Langue name="Deutsch" filename="german.xml" version="7.0">
+	<Native-Langue name="Deutsch" filename="german.xml" version="7.4">
 		<Menu>
 			<Main>
                 <!-- Main Menu Entries -->
@@ -24,6 +24,7 @@
 					<Item menuId="encoding" name="&amp;Kodierung"/>
 					<Item menuId="language" name="S&amp;prachen"/>
 					<Item menuId="settings" name="&amp;Einstellungen"/>
+					<Item menuId="tools" name="Werk&amp;zeuge"/>
 					<Item menuId="macro" name="&amp;Makro"/>
 					<Item menuId="run" name="Ausfüh&amp;ren"/>
 					<Item idName="Plugins" name="Er&amp;weiterungen"/>
@@ -74,6 +75,8 @@
 					<Item subMenuId="encoding-westernEuropean" name="&amp;Westeuropäisch"/>
 					<Item subMenuId="encoding-vietnamese" name="&amp;Vietnamesisch"/>
 					<Item subMenuId="settings-import" name="&amp;Import"/>
+					<Item subMenuId="tools-md5" name="MD5"/>
+
 				</SubEntries>
 
                 <!-- all menu item -->
@@ -136,7 +139,7 @@
 					<Item id="42073" name="Datei Öffnen"/>
 					<Item id="42074" name="Ordner im Explorer öffnen"/>
 					<Item id="42075" name="Suche im Internet"/>
-					<Item id="42076" name="Suchmaschine wechseln..."/>
+					<Item id="42076" name="Andere Suchmaschine wählen …"/>
 					<Item id="42018" name="Aufzeichnung s&amp;tarten"/>
 					<Item id="42019" name="Aufzeichnung st&amp;oppen"/>
 					<Item id="42021" name="Makro ausfüh&amp;ren"/>
@@ -283,25 +286,25 @@
 					<Item id="44012" name="Zeilennummernrand ausb&amp;lenden"/>		<!-- kommt im englischen nicht oder nicht mehr vor -->
 					<Item id="44013" name="Lesezeichenrand ausb&amp;lenden"/>		<!-- kommt im englischen nicht oder nicht mehr vor -->
 					<Item id="44014" name="Codefaltung ausb&amp;lenden"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
-					<Item id="47008" name="In&amp;halt …"/>							<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="47008" name="In&amp;halt …"/>					<!-- kommt im englischen nicht oder nicht mehr vor -->
 
 					<Item id="10001" name="In zweite Ansicht &amp;verschieben"/>
 					<Item id="10002" name="In zweite Ansicht &amp;duplizieren"/>
 					<Item id="10003" name="In &amp;neue Instanz verschieben"/>
 					<Item id="10004" name="In neue Instan&amp;z duplizieren"/>
 
-					<Item id="45060" name="Big5 (Traditionell)"/>
-					<Item id="45061" name="GB2312 (Vereinfacht)"/>
-					<Item id="45054" name="OEM 861: Isländisch"/>
-					<Item id="45057" name="OEM 865: Nordisch"/>
-					<Item id="45053" name="OEM 860: Portugiesisch"/>
-					<Item id="45056" name="OEM 863: Französisch"/>
+					<Item id="45060" name="Big5 (Traditionell)"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="45061" name="GB2312 (Vereinfacht)"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="45054" name="OEM 861: Isländisch"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="45057" name="OEM 865: Nordisch"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="45053" name="OEM 860: Portugiesisch"/>		<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="45056" name="OEM 863: Französisch"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
 
-                    <Item id="46033" name="Zusammengesetzt"/>
-					<Item id="46019" name="MS-INI-Datei"/>
-					<Item id="46015" name="MS-DOS-Stil"/>
-					<Item id="46016" name="Normaler Text"/>
-					<Item id="46017" name="Ressourcen-Datei"/>
+                    <Item id="46033" name="Assembler"/>						<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="46019" name="MS-INI-Datei"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="46015" name="MS-DOS-Stil"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="46016" name="Normaler Text"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="46017" name="Ressourcen-Datei"/>		<!-- kommt im englischen nicht oder nicht mehr vor -->
 
 					<Item id="46001" name="&amp;Stile …"/>
 					<Item id="46150" name="Eigene Sprache &amp;definieren …"/>
@@ -322,6 +325,10 @@
 					<Item id="48018" name="&amp;Kontextmenü anpassen …"/>
 					<Item id="48009" name="&amp;Tastatur …"/>
 					<Item id="48011" name="&amp;Optionen …"/>
+					<Item id="48501" name="Erstelle …"/>
+					<Item id="48502" name="Erstelle aus Dateien …"/>
+					<Item id="48503" name="Erstelle in die Zwischenablage"/>
+
 					<Item id="49000" name="Externes Programm &amp;ausführen …"/>
 
 					<Item id="50000" name="&amp;Funktionsvervollständigung"/>
@@ -364,8 +371,9 @@
 
 		<Dialog>
 			<Find title="Suchen und ersetzen" titleFind="Suchen" titleReplace="Ersetzen" titleFindInFiles="In Dateien suchen" titleMark="Hervorheben">
-				<Item id="1"    name="&amp;Weitersuchen"/>
-				<Item id="2"    name="&amp;Schließen"/>
+				<Item id="1"    name="&amp;Suchen >>"/>
+		                <Item id="1721" name="<< S&amp;uchen"/>
+				<Item id="2"    name="S&amp;chließen"/>
 				<Item id="1620" name="Suchen &amp;nach:"/>
 				<Item id="1603" name="Nur &amp;ganze Wörter suchen"/>
 				<Item id="1604" name="Groß-/&amp;Kleinschreibung beachten"/>
@@ -400,13 +408,13 @@
 				<Item id="1641" name="Alle in aktiver &amp;Datei suchen"/>
 				<Item id="1686" name="Transparenz"/>
 				<Item id="1703" name="&amp;. findet \r und \n"/>
-				<Item id="1627" name="Unten"/>					<!-- kommt im englischen nicht oder nicht mehr vor -->
+				<Item id="1627" name="Unten"/>				<!-- kommt im englischen nicht oder nicht mehr vor -->
 				<Item id="1637" name="In Dateien suchen"/>		<!-- kommt im englischen nicht oder nicht mehr vor -->
 				<Item id="1640" name="Umschaltdialog"/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
 			</Find>
 
 			<FindCharsInRange title="Suche nach Zeichencodes">
-				<Item id="-1"   name="–"/>						<!-- kommt im englischen nicht oder nicht mehr vor -->
+				<Item id="-1"   name="–"/>				<!-- kommt im englischen nicht oder nicht mehr vor -->
 				<Item id="2"    name="S&amp;chließen"/>
 				<Item id="2901" name="&amp;Nicht-ASCII-Zeichen (128–255)"/>
 				<Item id="2902" name="&amp;ASCII-Zeichen (0–127)"/>
@@ -435,6 +443,18 @@
 				<Item id="1904" name="&amp;Speichern"/>
 				<Item id="1901" name=".&amp;.."/>				<!-- kommt im englischen nicht oder nicht mehr vor -->
 			</Run>
+
+			<MD5FromFilesDlg title="Erstelle MD5-Hashwert aus Dateien">
+				<Item id="1922" name="Wähle Dateien zur Erstellung des MD5-Hashwerts …"/>
+				<Item id="1924" name="In die Zwischenablage kopieren"/>
+				<Item id="2"    name="Schließen"/>
+			</MD5FromFilesDlg>
+
+			<MD5FromTextDlg title="Erstelle MD5-Hashwert">
+				<Item id="1932" name="Behandle jede Zeile als eigene Zeichenkette"/>
+				<Item id="1934" name="In die Zwischenablage kopieren"/>
+				<Item id="2"    name="Schließen"/>
+			</MD5FromTextDlg>
 
 			<StyleConfig title="Stile">
 				<Item id="1"    name="Übernehmen"/>				<!-- kommt im englischen nicht oder nicht mehr vor -->
@@ -694,8 +714,7 @@
 					<Item id="6207" name="Lesezeichenrand"/>
 					<Item id="6208" name="Randbegrenzung anzeigen"/>
 					<Item id="6209" name="Anzahl der Spalten:"/>
-					<Item id="6234" name="Flüssiges Scrollen deaktivieren
-(bei Touchpad-Problemen)"/>
+					<Item id="6234" name="Flüssiges Scrollen deaktivieren&#x0a;(bei Touchpad-Problemen)"/>
 
 					<Item id="6211" name="Rechter Rand"/>
 					<Item id="6212" name="Vertikale Linie"/>
@@ -728,8 +747,8 @@
 					<Item id="6414" name="Wie aktuelle Datei"/>
 					<Item id="6415" name="Letztes Verzeichnis merken"/>
 					<Item id="6430" name="Neuen Stilspeicherungsdialog benutzen (ohne Dateierweiterungen)"/>	
-					<Item id="6431" name="Alle Dateien im Verzeichnis öffnen anstatt das Start-Verzeichnis als Arbeitsbereich zu verwenden"/>
-					<Item id="6418" name="…"/>				<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="6431" name="Alle Dateien im jeweiligen Verzeichnis öffnen anstelle des Start-Verzeichnisses"/>
+					<Item id="6418" name="…"/>		<!-- kommt im englischen nicht oder nicht mehr vor -->
 				</DefaultDir>
 
 				<FileAssoc title="Dateiverknüpfungen">
@@ -754,6 +773,7 @@
 					<Item id="6332" name="Groß-/Kleinschreibung beachten"/>
 					<Item id="6338" name="Übereinstimmung mit ganzem Wort"/>
 					<Item id="6339" name="Sucheinstellungen benutzen"/>
+					<Item id="6340" name="Andere Hervorhebung"/>
 					<Item id="6329" name="HTML-Hervorhebung"/>
 					<Item id="6327" name="Tags hervorheben"/>
 					<Item id="6328" name="Attribute hervorheben"/>
@@ -794,7 +814,6 @@
 					<Item id="6304" name="Zuletzt geöffnete Dateien"/>
 					<Item id="6306" name="Max. Menüeinträge:"/>
 					<Item id="6305" name="Beim Programmstart nicht überprüfen"/>
-					<Item id="-1"   name="Anzeige im Dateimenü"/>				<!-- kommt im englischen nicht oder nicht mehr vor -->
 					<Item id="6429" name="Anzeige im Dateimenü"/>
 					<Item id="6424" name="Als Untermenü"/>
 					<Item id="6425" name="Nur Dateinamen"/>
@@ -823,6 +842,7 @@
 					<Item id="6809" name="Funktionsvervollständigung"/>
 					<Item id="6810" name="Wortvervollständigung"/>
 					<Item id="6816" name="Wort- und Funktionsvervollständigung"/>
+					<Item id="6824" name="Zahlen ignorieren"/>
 					<Item id="6811" name="ab"/>
 					<Item id="6813" name="Zeichen"/>
 					<Item id="6814" name="(mögliche Werte: 1–9)"/>
@@ -834,12 +854,6 @@
 					<Item id="6860" name="Zeichenpaar 1:"/>
 					<Item id="6863" name="Zeichenpaar 2:"/>
 					<Item id="6866" name="Zeichenpaar 3:"/>
-					<Item id="6861" name=""/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
-					<Item id="6862" name=""/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
-					<Item id="6864" name=""/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
-					<Item id="6865" name=""/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
-					<Item id="6867" name=""/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
-					<Item id="6868" name=""/>			<!-- kommt im englischen nicht oder nicht mehr vor -->
 				</AutoCompletion>
 
 				<MultiInstance title="Mehrere Instanzen">
@@ -855,15 +869,16 @@
 					<Item id="6252" name="Anfang"/>
 					<Item id="6255" name="Ende"/>
 					<Item id="6256" name="Über mehrere Zeilen"/>
-					<Item id="6257" name="bla bla bla bla bla bla"/>								<!-- kommt im englischen nicht oder nicht mehr vor -->
-					<Item id="6258" name="bla bla bla bla bla bla bla bla bla bla bla bla"/>		<!-- kommt im englischen nicht oder nicht mehr vor -->
-				</Delimiter>
+					<Item id="6257" name="bla bla bla bla bla bla"/>				<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="6258" name="bla bla bla bla bla bla bla bla bla bla bla bla"/>	<!-- kommt im englischen nicht oder nicht mehr vor -->
+					<Item id="6161" name="Liste der Wortzeichen (Word character list)"/>
+					<Item id="6162" name="Verwende die ursprüngliche Liste der Wortzeichen"/>
+					<Item id="6163" name="Füge Zeichen als Teil der Wortzeichen hinzu&#x0a;(nicht verwenden wenn man nicht sicher ist)"/>				</Delimiter>
 
 				<Cloud title="Cloud-Einstellungen">
 					<Item id="6262" name="Einstellungen in der Cloud speichern"/>
 					<Item id="6263" name="Aus"/>
 					<Item id="6267" name="Netzwerkpfad:"/>
- 					<!--Item id="6261" name="Bitte Notepad++ für die Änderungen neu starten."/-->
 				</Cloud>
 
 				<SearchEngine title="Suchmaschine">
@@ -896,7 +911,9 @@
 					<Item id="6114" name="Aktivieren"/>
 					<Item id="6115" name="Automatische Einrückung"/>
 					<Item id="6117" name="In Reihenfolge der Benutzung"/>
-				</MISC>
+					<Item id="6344" name="Momentaufnahme des Dokuments"/>
+					<Item id="6345" name="Momentaufnahme in Tab"/>
+					<Item id="6346" name="Momentaufnahme in Miniaturansicht"/></MISC>
 			</Preference>
 			<MultiMacro title="Makro mehrfach ausführen">
 				<Item id="1"    name="Ausfüh&amp;ren"/>
@@ -930,20 +947,30 @@
 			</ColumnEditor>
 		</Dialog>
 		<MessageBox>
-			<ContextMenuXmlEditWarning title="Kontextmenü anpassen" message="Durch Bearbeiten der Datei contextMenu.xml können Sie das Kontextmenü von Notepad++ anpassen.&#x0A;Nach dem Bearbeiten müssen Sie Notepad++ neu starten, damit die Änderungen wirksam werden."/>
-			<NppHelpAbsentWarning title="Fehlende Hilfedatei" message="&#x0A;wurde nicht gefunden. Bitte laden Sie die Hilfedateien von der Notepad++-Website herunter."/>
-			<SaveCurrentModifWarning title="Änderungen speichern" message="Bitte speichern Sie Ihre Änderungen.&#x0A;Fortfahren?"/>
-			<LoseUndoAbilityWarning title="Änderungen können nicht rückgängig gemacht werden" message="Diese Änderung kann nicht rückgängig gemacht werden.&#x0A;Fortfahren?"/>
-			<CannotMoveDoc title="In neue Instanz verschieben" message="Dokument wurde geändert. Bitte zuerst speichern und erneut versuchen."/>
-			<DocReloadWarning title="Datei wurde geändert!" message="Sind Sie sicher, dass Sie die Datei in der zuletzt gespeicherten Version erneut laden und die in Notepad++ gemachten Änderungen verwerfen wollen?"/>
+			<ContextMenuXmlEditWarning title="Kontextmenü anpassen" message="Durch Bearbeiten der Datei contextMenu.xml können Sie&#x0A;das Kontextmenü von Notepad++ anpassen.&#x0A;Nach dem Bearbeiten müssen Sie Notepad++ neu&#x0A;starten, damit die Änderungen wirksam werden."/>
+			<NppHelpAbsentWarning title="Fehlende Hilfedatei" message="&#x0A;wurde nicht gefunden. Bitte laden Sie die Hilfedateien&#x0A;von der Notepad++-Website herunter."/>
+			<SaveCurrentModifWarning title="Änderungen speichern" message="Bitte speichern Sie Ihre Änderungen.&#x0A;&#x0A;Fortfahren?"/>
+			<LoseUndoAbilityWarning title="Änderungen können nicht rückgängig gemacht werden" message="Diese Änderung kann nicht rückgängig gemacht werden.&#x0A;&#x0A;Fortfahren?"/>
+			<CannotMoveDoc title="In neue Instanz verschieben" message="Dokument wurde geändert.&#x0A;Bitte zuerst speichern und erneut versuchen."/>
+			<DocReloadWarning title="Datei wurde geändert!" message="Sind Sie sicher, dass Sie die Datei in der zuletzt&#x0A;gespeicherten Version erneut laden und die&#x0A;in Notepad++ gemachten Änderungen verwerfen wollen?"/>
 			<FileLockedWarning title="Speichern fehlgeschlagen!" message="Datei konnte von Notepad++ nicht gespeichert werden. &#x0A;Bitte überprüfen Sie, ob die Datei in einem anderen Programm geöffnet ist."/>
 			<FileAlreadyOpenedInNpp title="Datei bereits geöffnet" message="Die Datei ist bereits in Notepad++ geöffnet."/>
 			<DeleteFileFailed title="Löschen fehlgeschlagen!" message="Datei konnte nicht gelöscht werden."/>
 
-            <!-- $INT_REPLACE$ is a place holder, don't translate it -->
+			<!-- $INT_REPLACE$ is a place holder, don't translate it -->
 			<NbFileToOpenImportantWarning title="Viele Dateien zu öffnen" message="$INT_REPLACE$ Dateien sollen in Notepad++ geöffnet werden.&#x0A;Sind Sie sicher?"/>
-			<SettingsOnCloudError title="Cloud-Einstellungen" message="Der Pfad zu den Einstellungen in der Cloud dürfte auf ein Laufwerk nur mit Leserechten,\roder auf ein Verzeichnis ohne die erforderlichen Schreibrechte zeigen.\rDie Einstellungen in der Cloud werden abgebrochen. Bitte stellen Sie auf einen schlüssigen Wert in den Einstellungen um."/>
+			<SettingsOnCloudError title="Cloud-Einstellungen" message="Der Pfad zu den Einstellungen in der Cloud dürfte&#x0A;auf ein Laufwerk nur mit Leserechten oder auf ein Verzeichnis&#x0A;ohne die erforderlichen Schreibrechte zeigen.&#x0A;Die Einstellungen in der Cloud werden abgebrochen.&#x0A;Bitte stellen Sie auf einen schlüssigen Wert in den Einstellungen um."/>
 			<FilePathNotFoundWarning title="Datei öffnen" message="Die Datei zum Öffnen existiert nicht."/>
+			<SessionFileInvalidError title="Konnte Sitzung nicht laden" message="Sitzungsdatei ist entweder beschädigt oder ungültig."/>
+			<ColumnModeTip title="Tip für Spalten-Modus" message="Verwende &quot;ALT+Maus Auswahl&quot; oder &quot;Alt+Shift+Pfeiltaste&quot;&#x0A;um in den Spalten-Modus zu wechseln."/>
+
+			<!-- $STR_REPLACE$ is a place holder, don't translate it -->
+			<SortingError title="Sortierung fehlgeschlagen" message="Kann aufgrund der Zeile $STR_REPLACE$ keine numerische Sortierung durchführen."/>
+			<BufferInvalidWarning title="Speichern fehlgeschlagen" message="Kann nicht speichern: Puffer ist ungültig."/>
+			<OpenInAdminMode title="Speichern fehlgeschlagen" message="Die Datei kann nicht gespeichert werden weil sie vielleicht geschützt ist.&#x0A;Soll Notepad++ im Administrator-Modus gestartet werden?"/>
+			<OpenInAdminModeFailed title="Starten im Administrator-Modus fehlgeschlagen" message="Notepad++ kann nicht im Administrator-Modus gestartet werden."/>
+			<OpenInAdminModeWithoutCloseCurrent title="Speichern fehlgeschlagen" message="Die Datei kann nicht gespeichert werden weil sie vielleicht geschützt ist.&#x0A;Soll Notepad++ im Administrator-Modus gestartet werden?"/>
+			<DroppingFolderAsProjetModeWarning title="Ungültige Aktion" message="Es können entweder Dateien oder Verzeichnisse verschoben werden, aber nicht beides zugleich.&#x0A;Dafür muss &quot;Alle Dateien im jeweiligen Verzeichnis öffnen anstelle des Start-Verzeichnisses&quot; im Bereich &quot;Standardverzeichnis&quot; der Einstellungen ausgewählt werden."/>
 		</MessageBox>
 		<ClipboardHistory>
 			<PanelTitle name="Zwischenablage"/>
@@ -1013,5 +1040,17 @@
 				</FileMenu>
 			</Menus>
 		</ProjectManager>
+		<MiscStrings>
+			<word-chars-list-tip value="Das erlaubt es ein zusätzliches Zeichen zur aktuellen Liste der Wortzeichen durch Doppelklick auf die Auswahl hinzuzufügen oder mit der aktivierten Option &quot;Übereinstimmung mit ganzem Wort&quot;."/>
+			<word-chars-list-warning-begin value="Achtung: "/>
+			<!-- $INT_REPLACE$ is a place holder, don't translate it -->
+			<word-chars-list-space-warning value="$INT_REPLACE$ Leerzeichen"/>
+			<!-- $INT_REPLACE$ is a place holder, don't translate it -->
+			<word-chars-list-tab-warning value="$INT_REPLACE$ Tab(s)"/>
+			<word-chars-list-warning-end value=" in der Liste der Wortzeichen."/>
+			<cloud-invalid-warning value="Ungültiger Pfad."/>
+			<cloud-restart-warning value="Zum Übernehmen Notepad++ bitte neu starten."/>
+			<shift-change-direction-tip value="Enter: Suche vorwärts, Shift+Enter: Suche rückwärts"/>
+		</MiscStrings>
 	</Native-Langue>
 </NotepadPlus>
